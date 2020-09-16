@@ -3,9 +3,9 @@
 A ["rompler"](https://en.wikipedia.org/wiki/Rompler) designed to sound like an acoustic guitar, and to be embedded into
 the range of guitar-themed instruments I've created.
 
-# Try It!
+## Try It!
 
-A copy of the instrument is hosted on my demo site.
+A copy of the instrument is hosted [on my demo site](https://duhrer.github.io/demos/guitarompler/).
 
 To use the latest version:
 
