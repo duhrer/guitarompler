@@ -223,6 +223,11 @@
         basePitch: 105
     });
 
+    fluid.defaults("guitarompler.7040Note", {
+        gradeNames: ["guitarompler.note"],
+        basePitch: 117
+    });
+
 
     fluid.defaults("guitarompler.noteHolder", {
         gradeNames: ["fluid.component"],
@@ -325,6 +330,13 @@
         basePitch: 105
     });
 
+    fluid.defaults("guitarompler.7040NoteFamily", {
+        gradeNames: ["guitarompler.noteFamily"],
+        noteUrl: "./src/sounds/7040.wav",
+        noteGrade: "guitarompler.7040Note",
+        basePitch: 117
+    });
+
     fluid.defaults("guitarompler.loom", {
         gradeNames: ["fluid.component"], // TODO: Make into a note receiver.
         members: {
@@ -336,13 +348,15 @@
             "880NotesCreated": null,
             "1760NotesCreated": null,
             "3520NotesCreated": null,
+            "7040NotesCreated": null,
             allFamilyNotesCreated: {
                 events: {
                     "220NotesCreated": "220NotesCreated",
                     "440NotesCreated": "440NotesCreated",
                     "880NotesCreated": "880NotesCreated",
                     "1760NotesCreated": "1760NotesCreated",
-                    "3520NotesCreated": "3520NotesCreated"
+                    "3520NotesCreated": "3520NotesCreated",
+                    "7040NotesCreated": "7040NotesCreated"
                 }
             }
         },
@@ -395,6 +409,16 @@
                     listeners: {
                         "createNotes.notifyParent": {
                             func: "{guitarompler.loom}.events.3520NotesCreated.fire"
+                        }
+                    }
+                }
+            },
+            "7040Family": {
+                type: "guitarompler.7040NoteFamily",
+                options: {
+                    listeners: {
+                        "createNotes.notifyParent": {
+                            func: "{guitarompler.loom}.events.7040NotesCreated.fire"
                         }
                     }
                 }
