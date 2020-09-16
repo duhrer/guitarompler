@@ -139,7 +139,7 @@
             if ((midiMessage.type === "noteOff" || midiMessage.velocity === 0) && that.isPlaying) {
                 that.stopPlaying();
             }
-            else if (midiMessage.type === "noteOn" && midiMessage.velocity > 0) {
+            else if (midiMessage.type === "aftertouch" | (midiMessage.type === "noteOn" && midiMessage.velocity > 0)) {
                 that.startPlaying(midiMessage);
             }
         }
@@ -157,16 +157,18 @@
             guitarompler.note.init(that);
         }
 
+        var velocity = midiMessage.velocity | midiMessage.pressure;
+
         // Vary the volume of playing notes so that we can support aftertouch.  Only stop the note if this isn't aftertouch.`
-        if (that.isPlaying && midiMessage.velocity > 0) {
-            that.gainNode.gain.value = guitarompler.note.gainFromVelocity(midiMessage.velocity);
+        if (that.isPlaying && velocity > 0) {
+            that.gainNode.gain.value = guitarompler.note.gainFromVelocity(velocity);
         }
         else {
             if (that.isPlaying) {
                 that.stopPlaying();
             }
 
-            that.gainNode.gain.value = guitarompler.note.gainFromVelocity(midiMessage.velocity);
+            that.gainNode.gain.value = guitarompler.note.gainFromVelocity(velocity);
 
             that.source = that.context.createBufferSource();
             that.source.buffer = that.options.buffer;
@@ -316,7 +318,6 @@
 
     });
 
-    // TODO: Extend the range of the bookend octaves, i.e. 440Hz and lower, 3520 and higher.
     fluid.defaults("guitarompler.3520NoteFamily", {
         gradeNames: ["guitarompler.noteFamily"],
         noteUrl: "./src/sounds/3520.wav",
@@ -415,7 +416,7 @@
 
     guitarompler.loom.sendToDestination = function (that, midiMessage) {
         var messageType = fluid.get(midiMessage, "type");
-        if (messageType && ["noteOn", "noteOff"].indexOf(messageType) !== -1) {
+        if (messageType && ["noteOn", "noteOff", "aftertouch"].indexOf(messageType) !== -1) {
             var noteDestination = fluid.get(that, ["destinationByNote", midiMessage.note]);
             if (noteDestination) {
                 noteDestination.handleNoteMessage(midiMessage);
@@ -453,7 +454,7 @@
                     portType: "input",
                     listeners: {
                         "aftertouch.notifyParent": {
-                            func: "{guitarompler.launcher}.events.note.fire"
+                            func: "{guitarompler.launcher}.events.aftertouch.fire"
                         },
                         "note.notifyParent": {
                             func: "{guitarompler.launcher}.events.note.fire"
