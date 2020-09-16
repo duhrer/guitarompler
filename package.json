@@ -1,0 +1,25 @@
+{
+    "name": "guitarompler",
+    "version": "1.0.0",
+    "description": "A \"rompler\" (sample-based) Flocking instrument designed to sound like an acoustic guitar.",
+    "main": "index.html",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "author": "",
+    "license": "ISC",
+    "repository": "https://github.com/duhrer/guitarompler",
+    "dependencies": {
+        "flocking-midi": "1.0.0-dev.20200715T193144Z.94cf29b.gh-30",
+        "infusion": "3.0.0-dev.20200728T104627Z.e6aa1a341.FLUID-6145"
+    },
+    "devDependencies": {
+        "eslint": "7.9.0",
+        "eslint-config-fluid": "1.4.0",
+        "fluid-grunt-lint-all": "1.0.8",
+        "grunt": "1.3.0",
+        "mkdirp": "1.0.4",
+        "recursive-copy": "2.0.11",
+        "rimraf": "3.0.2"
+    }
+}
