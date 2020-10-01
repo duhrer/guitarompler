@@ -1,29 +1,27 @@
 /*
 
-    A sample-based synthesizer based on multiple recordings of an acoustic guitarlele.  Note-handling is divided into "families" around a particular sample, with scaling hints for each
-    note ("family member").  Each family contains at least 12 notes: six steps below the unscaled recording, the unscaled recording itself, and five steps above.  The relative scaling is as
-    follows:
+    A sample-based synthesizer based on multiple recordings of an acoustic guitarlele.  Note-handling is divided into
+    "families" around a particular sample, with scaling hints for each note ("family member").  Each family contains at
+    least 12 notes: six steps below the unscaled recording, the unscaled recording itself, and five steps above.  The
+    relative scaling is based on the fact that the frequency doubles as it rises an octave.  The shifted frequency can
+    be derived using the following pseudocode formula:
 
+    shiftedFrequency = baseFrequency * (Math.pow(2, ( desiredPitch - basePitch) / 12))
 
-    0.707106781186548
-    0.749153538438341
-    0.7937005259841
-    0.840896415253714
-    0.890898718140339
-    0.943874312681693
-    1
-    1.0594630943593
-    1.12246204830937
-    1.18920711500272
-    1.25992104989487
-    1.33483985417003
+    Although we can calculate the shiftedFrequency for any distance away from the base pitch, in practice we are limited
+    by the implementation of WebAudio's AudioBufferSourceNode.playbackRate:
 
+    https://webaudio.github.io/web-audio-api/#dom-audiobuffersourcenode-playbackrate
 
-    As this instrument is based on the natural range of the guitar, it only supports from a note below the open E on a guitar (D#4, or note 63) to five steps above (D#8, or note 111).
+    That supports scaling between -3.4 and 3.4 times the original speed.  This means a note can be effectively scaled
+    21 steps in each direction, as this corresponds to the highest scaling value (3.36) under 3.4.
 
-    See https://en.wikipedia.org/wiki/MIDI_tuning_standard and https://www.inspiredacoustics.com/en/MIDI_note_numbers_and_center_frequencies for the formulas and frequency values
-    used to refine this approach.
+    As the lowest recorded note corresponds to MIDI note 57 (A3), the lowest playable note is 36 (C2).  The highest
+    recorded note corresponds to MIDI note 117 (A8), and we can scale that to the highest note supported by the MIDI
+    standard, i.e. 127 (G9). Thus the overall range is 91 notes, or seven and a half octaves between C2 and G9.
 
+    See https://en.wikipedia.org/wiki/MIDI_tuning_standard and https://www.inspiredacoustics.com/en/MIDI_note_numbers_and_center_frequencies
+    for the formulas and frequency values used to refine this approach.
 
     The basic approach to sound loading and decoding was adapted from the blog post here:  https://www.html5rocks.com/en/tutorials/webaudio/intro/
 
@@ -94,6 +92,7 @@
     fluid.defaults("guitarompler.note", {
         gradeNames: ["fluid.component"],
         basePitch: 69,
+        baseFreq: 440,
         offset: 0,
         pitch: "@expand:fluid.add({that}.options.basePitch, {that}.options.offset)",
         speed: 1,
@@ -191,6 +190,10 @@
         }
     };
 
+    guitarompler.note.speedFromOffset = function (offset) {
+        return Math.pow(2, (offset / 12));
+    };
+
     guitarompler.note.stopPlaying = function (that) {
         if (that.source) {
             that.source.stop();
@@ -233,20 +236,29 @@
         gradeNames: ["fluid.component"],
         noteGrade: "guitarompler.note",
         basePitch: 0,
+        minOffset: -6,
+        maxOffset: 5,
         noteSources: [
-            { offset: -6, speed: 0.707106781186548 },
-            { offset: -5, speed: 0.749153538438341 },
-            { offset: -4, speed: 0.7937005259841 },
-            { offset: -3, speed: 0.840896415253714 },
-            { offset: -2, speed: 0.890898718140339 },
-            { offset: -1, speed: 0.943874312681693 },
-            { offset: 0, speed: 1 },
-            { offset: 1, speed: 1.0594630943593 },
-            { offset: 2, speed: 1.12246204830937 },
-            { offset: 3, speed: 1.18920711500272 },
-            { offset: 4, speed: 1.25992104989487 },
-            { offset: 5, speed: 1.33483985417003 }
+            { offset: -6},
+            { offset: -5},
+            { offset: -4},
+            { offset: -3},
+            { offset: -2},
+            { offset: -1},
+            { offset: 0},
+            { offset: 1},
+            { offset: 2},
+            { offset: 3},
+            { offset: 4},
+            { offset: 5},
+            { offset: 6},
+            { offset: 7},
+            { offset: 8},
+            { offset: 9},
+            { offset: 10}
         ],
+        // TODO: Figure out a way to generate the sources more cleanly, this fails.
+        // noteSources: "expand:guitarompler.noteHolder.generateNoteSources({that}.options.minOffset, {that}.options.maxOffset)",
         buffer: false,
         dynamicComponents: {
             "note": {
@@ -255,12 +267,20 @@
                 options: {
                     basePitch: "{guitarompler.noteHolder}.options.basePitch",
                     offset: "{source}.offset",
-                    speed: "{source}.speed",
+                    speed: "@expand:guitarompler.note.speedFromOffset({source}.offset)",
                     buffer: "{guitarompler.noteHolder}.options.buffer"
                 }
             }
         }
     });
+
+    guitarompler.noteHolder.generateNoteSources = function (minOffset, maxOffset) {
+        var noteSources = [];
+        for (var a = minOffset; a <= maxOffset; a++) {
+            noteSources.push({ offset: a});
+        }
+        return noteSources;
+    };
 
     fluid.defaults("guitarompler.noteFamily", {
         gradeNames: ["fluid.component"],
@@ -298,7 +318,44 @@
         gradeNames: ["guitarompler.noteFamily"],
         noteUrl: "./src/sounds/220.wav",
         noteGrade: "guitarompler.220Note",
-        basePitch: 57
+        basePitch: 57,
+        components: {
+            noteHolder: {
+                options: {
+                    minOffset: -21,
+                    maxOffset:  5,
+                    noteSources: [
+                        { offset: -21},
+                        { offset: -20},
+                        { offset: -19},
+                        { offset: -18},
+                        { offset: -17},
+                        { offset: -16},
+                        { offset: -15},
+                        { offset: -14},
+                        { offset: -13},
+                        { offset: -12},
+                        { offset: -11},
+                        { offset: -10},
+                        { offset: -9},
+                        { offset: -8},
+                        { offset: -7},
+                        { offset: -6},
+                        { offset: -5},
+                        { offset: -4},
+                        { offset: -3},
+                        { offset: -2},
+                        { offset: -1},
+                        { offset: 0},
+                        { offset: 1},
+                        { offset: 2},
+                        { offset: 3},
+                        { offset: 4},
+                        { offset: 5}
+                    ]
+                }
+            }
+        }
     });
 
     fluid.defaults("guitarompler.440NoteFamily", {
@@ -334,7 +391,34 @@
         gradeNames: ["guitarompler.noteFamily"],
         noteUrl: "./src/sounds/7040.wav",
         noteGrade: "guitarompler.7040Note",
-        basePitch: 117
+        basePitch: 117,
+        components: {
+            noteHolder: {
+                options: {
+                    minOffset: -6,
+                    maxOffset: 10,
+                    noteSources: [
+                        { offset: -6},
+                        { offset: -5},
+                        { offset: -4},
+                        { offset: -3},
+                        { offset: -2},
+                        { offset: -1},
+                        { offset: 0},
+                        { offset: 1},
+                        { offset: 2},
+                        { offset: 3},
+                        { offset: 4},
+                        { offset: 5},
+                        { offset: 6},
+                        { offset: 7},
+                        { offset: 8},
+                        { offset: 9},
+                        { offset: 10}
+                    ]
+                }
+            }
+        }
     });
 
     fluid.defaults("guitarompler.loom", {
